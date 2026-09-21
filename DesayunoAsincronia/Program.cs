@@ -2,26 +2,28 @@
 
 var sincrono = new Sincrono();
 var asincrono = new Asincrono();
- 
-// La versión síncrona se lanza en un hilo del pool para poder medirla y
-// aplicarle el timeout igual que a las demás
-var ejecuciones = new (string Nombre, Func<Task> Accion)[]
-{
-    ("Secuencial (síncrona)",  () => Task.Run(sincrono.Preparar)),
-    ("Asíncrona (async/await)", asincrono.PrepararAsync),
-    ("Paralela (optimizada)",   asincrono.PrepararEnParaleloAsync),
-};
- 
+
 Console.WriteLine("=== EJECUCIÓN NORMAL ===");
-foreach (var (nombre, accion) in ejecuciones)
-{
-    Console.WriteLine($"\n--> {nombre}:");
-    await Cronometro.MedirAsync(accion);
-}
- 
+
+Console.WriteLine("\n--> Secuencial (síncrona):");
+await Cronometro.MedirAsync(() => Task.Run(sincrono.Preparar));
+
+Console.WriteLine("\n--> Asíncrona (async/await):");
+await Cronometro.MedirAsync(asincrono.PrepararAsync);
+
+Console.WriteLine("\n--> Paralela (optimizada):");
+await Cronometro.MedirAsync(asincrono.PrepararEnParaleloAsync);
+
 Console.WriteLine("\n=== EJECUCIÓN CON TIMEOUT (500 ms) ===");
-foreach (var (nombre, accion) in ejecuciones)
-{
-    Console.WriteLine($"\n--> {nombre} con timeout:");
-    await Cronometro.MedirAsync(() => EjecutorConTimeout.EjecutarAsync(accion, timeoutMs: 500));
-}
+
+Console.WriteLine("\n--> Secuencial (síncrona) con timeout:");
+await Cronometro.MedirAsync(() =>
+    EjecutorConTimeout.EjecutarAsync(() => Task.Run(sincrono.Preparar), timeoutMs: 500));
+
+Console.WriteLine("\n--> Asíncrona (async/await) con timeout:");
+await Cronometro.MedirAsync(() =>
+    EjecutorConTimeout.EjecutarAsync(asincrono.PrepararAsync, timeoutMs: 500));
+
+Console.WriteLine("\n--> Paralela (optimizada) con timeout:");
+await Cronometro.MedirAsync(() =>
+    EjecutorConTimeout.EjecutarAsync(asincrono.PrepararEnParaleloAsync, timeoutMs: 500));
